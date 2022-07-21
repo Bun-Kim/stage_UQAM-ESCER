@@ -85,6 +85,6 @@ def nombre_occurence_mensuelle(dataset,champs,dates,lon,lat):
         occurences.append(np.nansum(liste_dataset_mensuel[k][nom_variables[k]].values))
     return occurences    
         
-    
+
     
     

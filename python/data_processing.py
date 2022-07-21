@@ -91,8 +91,6 @@ def selectionDonnees(dico,data):
     time = data_season.time.values
     return [time,lat,lon,data_season,dates]
 
-data_model = xr.open_dataset(dir_model +'cape_cp_era5_2018-2020.nc')
-data_obs = xr.open_dataset(dir_obs +'WWLLN_2010-2019.nc')
 
 def domaine_canada(data):
     mask = xr.open_mfdataset('ERA5_mask_Canadian_timezone_ESRI_v4.nc')

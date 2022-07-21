@@ -12,6 +12,7 @@ import proxy_calculation as pc
 import carte
 import statistiques
 
+
 base_Canada = {'anneeDebut':2018, 'anneeFin':2019,'anneeDebut_model':2018,
         'anneeFin_model':2020,
         'frequence':'1D', 'resolution':1, 
@@ -32,6 +33,7 @@ base = {'anneeDebut':2018, 'anneeFin':2019,'anneeDebut_model':2018,
         'methode_temporelle_proxy':['max','sum'],
         'methode_spatiale_proxy':['mean','mean'],'methode_proxy':'mul','methode_spatiale':['bilinear','bilinear']}
 '''
+
 base=base_Canada
 liste_mois =  ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai' , 'Juin',
              'Juillet', 'Aout', 'Septembre' , 'Octobre','Novembre',
@@ -70,7 +72,7 @@ temp1 = data_processing.ouvre_fichier(b)
 #temp1 = data_processing.mask_canada(temp1)
 
 temp = data_processing.changement_nom_coordonnees_obs(base, temp)
-temp1 = data_processing.changement_nom_coordonnees_model(base, temp1)
+#temp1 = data_processing.changement_nom_coordonnees_model(base, temp1)
 
 
 
@@ -89,12 +91,12 @@ print('ajustement spatial')
 print('ajustement des donnees pour le proxy')
 print('ajustement temporel')
 temp1=ajustement.resolution_temporelle_model(base, temp1)
-print('ajustement spatial')
-temp2 = ajustement.resolution_spatiale_model(base,temp,temp1)
+#print('ajustement spatial')
+#temp1 = ajustement.resolution_spatiale_model(base,temp,temp1)
 
 #Dataset_controle_methode=ajustement.controle_resolution_spatiale_model_cape(base,temp,temp1)
 
-[t_model,la_model,lo_model,da_model,date2_model]=data_processing.selectionDonnees(base,temp2)
+[t_model,la_model,lo_model,da_model,date2_model]=data_processing.selectionDonnees(base,temp1)
 
 proxy= pc.proxy_calculus(base, da_model) *20
 
@@ -186,42 +188,15 @@ carte.tracer_saison(base, SON_dataset_obs, "SON_F")
 carte.tracer_saison(base, SON_dataset_proxy, "SON_proxy")
 '''
 #data mensuelle et plot
-Janvier_dataset_F = statistiques.data_mensuelle(da_obs, 'F', 'Janvier', date2_obs, lo_obs, la_obs)
-carte.tracer(base, Janvier_dataset_F,'Janvier_F')
-
-moyenne_occurence_mensuelle = statistiques.moyenne_occurence_mensuelle(da_obs, 'F', date2_obs, lo_obs, la_obs)
-nombre_occurence_mensuelle_obs = statistiques.nombre_occurence_mensuelle(da_obs, 'F', date2_obs, lo_obs, la_obs)
-
-nombre_occurence_mensuelle_proxy = statistiques.nombre_occurence_mensuelle(proxy, 'proxy', date2_model, lo_model, la_model)
-nombre_occurence_mensuelle_cape = statistiques.nombre_occurence_mensuelle(cape, 'cape', date2_model, lo_model, la_model)
-nombre_occurence_mensuelle_cp = statistiques.nombre_occurence_mensuelle(cp, 'cp', date2_model, lo_model, la_model)
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-
-x = np.linspace(0,11,num=12)
-F=nombre_occurence_mensuelle_obs = statistiques.nombre_occurence_mensuelle(da_obs, 'F', date2_obs, lo_obs, la_obs)
-
-fig, axs = plt.subplots(2, 2)
-axs[0, 0].plot(x,nombre_occurence_mensuelle_proxy,'--vb',label='proxy')
-ax2=axs[0, 0].twinx() 
-ax2.plot(x,F,'-vk',label='F')
-axs[0, 0].set_xticks(x, liste_mois, rotation=30, ha='center',size=5)
-
-axs[0, 1].plot(x,nombre_occurence_mensuelle_cape,'--vg',label='cape')
-ax2=axs[0, 1].twinx() 
-ax2.plot(x,F,'-vk')
-axs[0, 1].set_xticks(x, liste_mois, rotation=30, ha='center',size=5)
-
-axs[1, 0].plot(x,nombre_occurence_mensuelle_cp,'--vr',label='cp')
-ax2=axs[1, 0].twinx() 
-ax2.plot(x,F,'-vk')
-axs[1, 0].set_xticks(x, liste_mois, rotation=30, ha='center',size=5)
-
-
-plt.suptitle('occurence mensuelle')
-fig.legend(loc="lower right")
-plt.show()
-
+#Janvier_dataset_F = statistiques.data_mensuelle(da_obs, 'F', 'Janvier', date2_obs, lo_obs, la_obs)
+#carte.tracer(base, Janvier_dataset_F,'Janvier_F')
 carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,da_obs, [cape,cp,proxy], ['F'], ['cape','cp','proxy'], date2_model, lo_model, la_model, 'sum')
+carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,da_obs, [cape,cp,proxy], ['F'], ['cape','cp','proxy'], date2_model, lo_model, la_model, 'mean')
+
+
+
+
+
+
+
+

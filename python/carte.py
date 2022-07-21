@@ -279,8 +279,8 @@ def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,
     x = np.linspace(0,11,num=12)
     n= int(len(liste_dataset_model)**(1/2)+1)
     
+    #fig, axs = plt.subplots(n, n, constrained_layout=True)
     fig, axs = plt.subplots(n, n)
-   
     for i in range(n):
             for j in range (min(n,len(occurences_model))):
                 
@@ -288,12 +288,19 @@ def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,
                     
                 
                 if count < len(champs_model):    
-                    print(count)
-                    print(i,j)
+                    
+                    correlation = np.corrcoef(F,occurences_model[count],F)[0,1]
                     axs[i, j].plot(x,occurences_model[count],color[count],label=champs_model[count])
+                    axs[i, j].set_title('correlation : '+str(correlation)[:5],size=8)
                     ax2=axs[i, j].twinx() 
                     ax2.plot(F,'-vk',label='F')
-                    axs[i, j].set_xticks(x, liste_mois, rotation=30, ha='center',size=5)
+                    axs[i, j].set_xticks(x, liste_mois, rotation=50, ha='center')
+                    axs[i, j].tick_params(axis='x', which='major', labelsize=6)
+                    axs[i, j].tick_params(axis='y', which='major', labelsize=4)
+                    ax2.tick_params(axis='y', which='major', labelsize=4)
+                    axs[i, j].legend(loc="upper right")
+                    
+                    
                     count=  count +1 
     
     axs[1, 1].axis('off')
@@ -303,7 +310,7 @@ def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,
     ax1 = plt.subplot(224, projection=ccrs.Orthographic(central_longitude=(-149.5-50.5)/2, central_latitude=(40.5+89.5)/2))
     
     #ax1 = plt.axes( projection=ccrs.Mercator(central_longitude=-80))
-    ax1.set_title(champs_obs[0]+ '  resolution ' + str(resolution) +'°' ,loc='center')
+    ax1.set_title(champs_obs[0]+ '  resolution ' + str(resolution) +'°' ,loc='center', size=8)
     #ax1 = fig.add_subplot( projection=ccrs.LambertConformal())
     ax1.set_extent(bounds(dico_Canada), crs=ccrs.PlateCarree())
     ax1.coastlines(resolution='auto', color='k')
