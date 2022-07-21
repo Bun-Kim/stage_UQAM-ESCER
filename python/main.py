@@ -193,7 +193,8 @@ carte.tracer_saison(base, SON_dataset_proxy, "SON_proxy")
 carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,da_obs, [cape,cp,proxy], ['F'], ['cape','cp','proxy'], date2_model, lo_model, la_model, 'sum')
 carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,da_obs, [cape,cp,proxy], ['F'], ['cape','cp','proxy'], date2_model, lo_model, la_model, 'mean')
 
-
+mask = xr.open_mfdataset('ERA5_mask_Canadian_timezone_ESRI_v4.nc')
+temp=temp.where(mask.region > 0 )
 
 
 
