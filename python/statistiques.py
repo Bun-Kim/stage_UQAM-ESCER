@@ -50,14 +50,44 @@ def data_mensuelle(dataset,champs,mois,dates,lon,lat):
 
     for i in range(1,13):
             liste_mois.append(np.any([dates.month==i],axis=0))
+    if np.shape(dataset[champs].values) != (730, 30, 100) :
+        temp = np.reshape(dataset[champs].values,(730, 30, 100))
+        data_mensuel=[temp[liste_mois[i]] for i in range(12)]
    
-    data_mensuel=[dataset[champs].values[liste_mois[i]] for i in range(12)]
-    
-    xarraymensuel=xr.DataArray(data_mensuel[dico_mois[mois]].mean(axis=0))
-    mensuel_dataset=xr.DataArray.to_dataset(xarraymensuel, name=mois +'_' + champs)
-    mensuel_dataset=mensuel_dataset.assign_coords({'lat' : lat, 'lon' : lon})
+        xarraymensuel=xr.DataArray(data_mensuel[dico_mois[mois]].mean(axis=0))
+        mensuel_dataset=xr.DataArray.to_dataset(xarraymensuel, name=mois +'_' + champs)
+        mensuel_dataset=mensuel_dataset.assign_coords({'lat' : lat, 'lon' : lon})
+    else :
+        data_mensuel=[dataset[champs].values[liste_mois[i]] for i in range(12)]
+   
+        xarraymensuel=xr.DataArray(data_mensuel[dico_mois[mois]].mean(axis=0))
+        mensuel_dataset=xr.DataArray.to_dataset(xarraymensuel, name=mois +'_' + champs)
+        mensuel_dataset=mensuel_dataset.assign_coords({'lat' : lat, 'lon' : lon})
     
     return mensuel_dataset
+
+def data_journaliere(dataset,champs,mois,dates,lon,lat):
+    liste_jours=[]
+    
+
+    for i in range(1,366):
+            liste_mois.append(np.any([dates.day==i],axis=0))
+    if np.shape(dataset[champs].values) != (730, 30, 100) :
+        temp = np.reshape(dataset[champs].values,(730, 30, 100))
+        data_mensuel=[temp[liste_jours[i]] for i in range(365)]
+   
+        xarraymensuel=xr.DataArray(data_mensuel[dico_mois[mois]].mean(axis=0))
+        mensuel_dataset=xr.DataArray.to_dataset(xarraymensuel, name=mois +'_' + champs)
+        mensuel_dataset=mensuel_dataset.assign_coords({'lat' : lat, 'lon' : lon})
+    else :
+        data_mensuel=[dataset[champs].values[liste_mois[i]] for i in range(12)]
+   
+        xarraymensuel=xr.DataArray(data_mensuel[dico_mois[mois]].mean(axis=0))
+        mensuel_dataset=xr.DataArray.to_dataset(xarraymensuel, name=mois +'_' + champs)
+        mensuel_dataset=mensuel_dataset.assign_coords({'lat' : lat, 'lon' : lon})
+    
+    return mensuel_dataset
+
 
 def moyenne_occurence_mensuelle(dataset,champs,dates,lon,lat):
     liste_dataset_mensuel = []

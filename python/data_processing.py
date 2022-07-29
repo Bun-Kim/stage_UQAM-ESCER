@@ -12,6 +12,7 @@ import xarray as xr
 import pandas as pd
 from netCDF4 import Dataset
 import subprocess
+import numpy as np
 
 dir_obs='../data/observation/'
 dir_model='../data/model/'
@@ -83,9 +84,12 @@ def selectionDonnees(dico,data):
     dates=pd.date_range(debut,fin,freq=dico['frequence'])
     
     data = data.assign_coords(lon=(((data.lon + 180) % 360) - 180)).sortby('lon').sortby('lat')
+    #Exclusion du 29 février
+    jours=np.any([dates.day!=29,dates.month!=2],axis=0)
+    dates2=dates[jours]
    
     data_season = data.sel(time=dates)
-    data_season = data.sel(lat=slice(dico['latS'],dico['latN'])).sel(lon=slice(dico['lonW'],dico['lonE'])).sel(time=dates)
+    data_season = data.sel(lat=slice(dico['latS'],dico['latN'])).sel(lon=slice(dico['lonW'],dico['lonE'])).sel(time=dates2)
     lat  = data_season.lat.values
     lon  = data_season.lon.values
     time = data_season.time.values
@@ -123,4 +127,27 @@ def sauvegarde_donnees(data,lat,lon,t,champs):
     data[champs].values = ncin.variables[champs][:]
     ncin.close()
         
-      
+def liste_mask_ecozones(dico,data):
+    mask_ecozones=[]
+    for i in range(0,18):
+        data = data.sel(lat=slice(dico['latS'],dico['latN'])).sel(lon=slice(dico['lonW'],dico['lonE']))
+        mask_ecozones.append(xr.DataArray.to_dataset(data.ecozones==i,name='ecozone'))
+    return mask_ecozones
+
+def repete_mask(data,mask):
+    repetition=[]
+    for date in data.time :
+        repetition.append(mask.ecozone.values)
+    repetition_dataaray= xr.DataArray(repetition)
+    repetition_dataset=xr.DataArray.to_dataset(repetition_dataaray,name='ecozone')
+    #repetition_dataset=repetition_dataset.assign_coords({'lat' : data.lat, 'lon' : data.lon, 'time' : data.time})
+    return (repetition_dataset)
+
+def champs_ecozone(data,dataset_ecozones,champs):
+    L=[]
+    for k in range (len(dataset_ecozones)):
+        
+        #L.append((dataset_ecozones[k] * data[champs]).to_array().T.to_dataset(name='cape'))
+        L.append((dataset_ecozones[k] * data[champs]).rename({'ecozone':champs}))
+    return L
+

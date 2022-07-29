@@ -12,16 +12,21 @@ import proxy_calculation as pc
 import carte
 import statistiques
 
+import matplotlib.pyplot as plt
 
 base_Canada = {'anneeDebut':2018, 'anneeFin':2019,'anneeDebut_model':2018,
         'anneeFin_model':2020,
         'frequence':'1D', 'resolution':1, 
         'proxy':['cape','cp'], 'model_proxy':'Era5', 'model_obs':'WWLLN',
         'latS':40.5,
-        'latN':89.5,'lonW':-149.5,'lonE':-50.5,'method_obs':'max',
+        'latN':69.5,'lonW':-149.5,'lonE':-50.5,'method_obs':'max',
         'methode_temporelle_proxy':['max','sum'],
         'methode_spatiale_proxy':['mean','mean'],'methode_proxy':'mul','methode_spatiale':['bilinear','bilinear']}
 
+ecozones=['Boreal_Cordillera','Taiga_Shield_W','Boreal_Shield_W','Northern_Arctic','Taiga_Cordillera','Taiga_Plains',
+          'Southern_Arctic','Boreal_Plains','Montane_Cordillera','Prairies','Pacific_Maritime','Arctic_Cordillera',
+          'Taiga_Shield_E','Atlantic_Maritime','Boreal_Shield_E',
+          'Mixedwood_Plains','Hudson_Plains','Boreal_Shield_S']
 
 '''
 base = {'anneeDebut':2018, 'anneeFin':2019,'anneeDebut_model':2018,
@@ -114,13 +119,45 @@ print('sauvegarde des donnees en fichier netcdf')
 import xarray as xr
 
 data_processing.sauvegarde_donnees(da_obs, la_obs, lo_obs, t_obs, "F")
+'''
 data_processing.sauvegarde_donnees(proxy, la_model, lo_model, t_model, "proxy")
 data_processing.sauvegarde_donnees(xr.DataArray.to_dataset(da_model['cp'],name='cp'),la_model, lo_model, t_model,'cp')
 data_processing.sauvegarde_donnees(xr.DataArray.to_dataset(da_model['cape'],name='cape'),la_model, lo_model, t_model,'cape')
-                                     
+'''                            
 ##############
 
+
+
+'''
+print("application des masks")
+import os
+path1='../var/model'
+os.chdir(path1)
+bashCommand = "bash mask.sh"
+os.system(bashCommand) 
+
+path2="../var/observation/"
+os.chdir(path2)
+bashCommand = "bash mask.sh"
+os.system(bashCommand) 
+
+'''
+
+infile_mask = '../data/mask/ecozone_mask_1.nc'
+ecozones=data_processing.ouvre_fichier(infile_mask)
+
+liste_mask_ecozones = data_processing.liste_mask_ecozones(base_Canada,ecozones)
+
+ecozones=['Boreal_Cordillera','Taiga_Shield_W','Boreal_Shield_W','Northern_Arctic','Taiga_Cordillera','Taiga_Plains',
+          'Southern_Arctic','Boreal_Plains','Montane_Cordillera','Prairies','Pacific_Maritime','Arctic_Cordillera',
+          'Taiga_Shield_E','Atlantic_Maritime','Boreal_Shield_E',
+          'Mixedwood_Plains','Hudson_Plains','Boreal_Shield_S']
+
+#############
+
+
 print('mask.sh a aller executer ')
+
 
 infile_var_cp = '../var/model/cp.nc'
 infile_var_cape = '../var/model/cape.nc'
@@ -128,11 +165,17 @@ infile_var_proxy = '../var/model/proxy.nc'
 infile_var_obs = '../var/observation/F.nc'
 infile_var_obs_Canada = '../var/observation/F_Canada.nc'
 
-cp=data_processing.ouvre_fichier(infile_var_cp)
-cape=data_processing.ouvre_fichier(infile_var_cape)
-proxy=data_processing.ouvre_fichier(infile_var_proxy)
-da_obs=data_processing.ouvre_fichier(infile_var_obs)
+
+#cp=data_processing.ouvre_fichier(infile_var_cp)
+#cape=data_processing.ouvre_fichier(infile_var_cape)
+#proxy=data_processing.ouvre_fichier(infile_var_proxy)
+
+import xarray as xr
+cp= xr.DataArray.to_dataset(da_model['cp'],name='cp')
+cape= xr.DataArray.to_dataset(da_model['cape'],name='cape')
+F=da_obs
 da_obs_Canada=data_processing.ouvre_fichier(infile_var_obs_Canada)
+#da_obs_Canada=data_processing.ouvre_fichier(infile_var_obs_Canada)
 
 
 [t_obs,la_obs,lo_obs,da_obs,date2_obs]=data_processing.selectionDonnees(base,da_obs)
@@ -146,58 +189,42 @@ carte.tracer_moyenne(base, proxy/10000, 'proxy')
 carte.tracer_moyenne(base, da_obs/(100*100),'F')
 carte.tracer_moyenne(base, cp, 'cp')
 carte.tracer_moyenne(base, cape,'cape')
-
-#import numpy as np
-#proxy=np.maximum(proxy,0)
-#da_obs=np.maximum(da_obs,0)
+carte.tracer_moyenne(base, da_obs_Canada/(100*100),'F')
 
 
+#############3
+for i in range(0,18):
+    #carte.tracer_moyenne(base_Canada,da_obs['F'] * liste_mask_ecozones[i] ,'ecozone')
+    carte.tracer_moyenne_echelle(base_Canada,da_obs['F'] * liste_mask_ecozones[i], da_obs,'ecozone','F',)
+   
 
-##############
-#attention application du mask tres couteuse
-#carte.tracer(base, data_processing.domaine_canada(proxy/10000), 'proxy')
-#carte.tracer(base, data_processing.domaine_canada(da_obs/(100*100)),'F')
 
-####
-'''
-#saison = {'DJF','MAM','JJA','SON'}
-DJF_dataset_obs = statistiques.data_saison(da_obs/(100*100), 'F', 'DJF', date2_obs, lo_obs, la_obs)
-DJF_dataset_proxy = statistiques.data_saison(0.39*proxy/10000, 'proxy', 'DJF', date2_obs, lo_obs, la_obs)
+cape_ecozones=data_processing.champs_ecozone(cape, liste_mask_ecozones, 'cape')
+cp_ecozones=data_processing.champs_ecozone(cp, liste_mask_ecozones, 'cp')
+proxy_ecozones=data_processing.champs_ecozone(proxy, liste_mask_ecozones, 'proxy')
+F_ecozones=data_processing.champs_ecozone(F, liste_mask_ecozones, 'F')
 
-MAM_dataset_obs = statistiques.data_saison(da_obs/(100*100), 'F', 'MAM', date2_obs, lo_obs, la_obs)
-MAM_dataset_proxy = statistiques.data_saison(0.39*proxy/10000, 'proxy', 'MAM', date2_obs, lo_obs, la_obs)
 
-JJA_dataset_obs = statistiques.data_saison(da_obs/(100*100), 'F', 'JJA', date2_obs, lo_obs, la_obs)
-JJA_dataset_proxy = statistiques.data_saison(0.39*proxy/10000, 'proxy', 'JJA', date2_obs, lo_obs, la_obs)
-
-SON_dataset_obs = statistiques.data_saison(da_obs/(100*100), 'F', 'SON', date2_obs, lo_obs, la_obs)
-SON_dataset_proxy = statistiques.data_saison(0.39*proxy/10000, 'proxy', 'SON', date2_obs, lo_obs, la_obs)
-
-#saison_dataset_obs names = {'DJF_F','MAM_F','JJA_F','SON_F'}
-#saison_dataset_proxy names = {'DJF_proxy','MAM_proxy','JJA_proxy','SON_proxy'}
-carte.tracer_saison(base, DJF_dataset_obs, "DJF_F")
-carte.tracer_saison(base, DJF_dataset_proxy, "DJF_proxy")
-
-carte.tracer_saison(base, MAM_dataset_obs, "MAM_F")
-carte.tracer_saison(base, MAM_dataset_proxy, "MAM_proxy")
-
-carte.tracer_saison(base, JJA_dataset_obs, "JJA_F")
-carte.tracer_saison(base, JJA_dataset_proxy, "JJA_proxy")
-
-carte.tracer_saison(base, SON_dataset_obs, "SON_F")
-carte.tracer_saison(base, SON_dataset_proxy, "SON_proxy")
-'''
-#data mensuelle et plot
-#Janvier_dataset_F = statistiques.data_mensuelle(da_obs, 'F', 'Janvier', date2_obs, lo_obs, la_obs)
-#carte.tracer(base, Janvier_dataset_F,'Janvier_F')
-carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,da_obs, [cape,cp,proxy], ['F'], ['cape','cp','proxy'], date2_model, lo_model, la_model, 'sum')
-carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,da_obs, [cape,cp,proxy], ['F'], ['cape','cp','proxy'], date2_model, lo_model, la_model, 'mean')
-
-mask = xr.open_mfdataset('ERA5_mask_Canadian_timezone_ESRI_v4.nc')
-temp=temp.where(mask.region > 0 )
+for i in range(0,18):
+    carte.trace_occurences_mensuelles(base_Canada,base,da_obs_Canada,F_ecozones[i],
+                                              [cape_ecozones[i],cp_ecozones[i],proxy_ecozones[i]],
+                                              ['F'], ['cape','cp','proxy'], date2_model, lo_model, 
+                                              la_model, 'mean',ecozones[i])
 
 
 
+#trace de la carte de correlation entre le proxy mensuel et F mensuel, method 
+#permet d'enlever pour l'echelle une zone par exemple 6 souther arctic qui a une tres mauvaise correlation  
+carte.trace_carte_correlation_mensuelle(base, liste_mask_ecozones, F_ecozones, 
+                                        proxy_ecozones, 'F', 'proxy', date2_obs, lo_obs, la_obs,method=5)
+
+proxy_journalier=proxy.proxy.values[:,10,65]
+F_journalier=F.F.values[:,10,65]
+
+plt.plot(F_journalier)
 
 
+plt.plot(proxy_journalier)
 
+import numpy as np
+np.corrcoef(F_journalier,proxy_journalier)[0,1]

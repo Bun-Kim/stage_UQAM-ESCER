@@ -20,9 +20,13 @@ method_list = [
     "nearest_d2s",
     "patch",
 ]
-liste_mois =  ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai' , 'Juin',
-             'Juillet', 'Aout', 'Septembre' , 'Octobre','Novembre',
-             'Decembre']
+liste_mois =  ['J', 'F', 'M', 'A', 'M' , 'J',
+             'J', 'A', 'S' , 'O','N',
+             'D']
+ecozones=['Boreal_Cordillera','Taiga_Shield_W','Boreal_Shield_W','Northern_Arctic','Taiga_Cordillera','Taiga_Plains',
+          'Southern_Arctic','Boreal_Plains','Montane_Cordillera','Prairies','Pacific_Maritime','Arctic_Cordillera',
+          'Taiga_Shield_E','Atlantic_Maritime','Boreal_Shield_E',
+          'Mixedwood_Plains','Hudson_Plains','Boreal_Shield_S']
 
 def bounds(dico):
     return [dico['lonW'], dico['lonE'], dico['latS'], dico['latN']]
@@ -64,10 +68,10 @@ def tracer_moyenne(dico,data,champs):
         # Put a background image on for nice sea rendering.
     ax1.stock_img()
     
-    datamean=np.nanmean(data[champs],axis=0)
+    datamean=data[champs].mean(dim='time').values
     #datamean = np.ma.masked_where(datamean <= 1.588127e-04, datamean)
-    levels = np.linspace(0, np.nanmean(data[champs].values)*10, 11)
-    
+    levels = np.linspace(0, np.nanmean(data[champs].values)*50, 11)
+    datamean[datamean<0.00005]=np.nan
     mm = ax1.contourf(data.lon.values,\
       data.lat.values,\
       datamean,\
@@ -76,7 +80,7 @@ def tracer_moyenne(dico,data,champs):
       transform=ccrs.PlateCarree(),\
       levels=levels,\
       cmap="jet",\
-      extend='both',
+      extend='max',
       alpha=0.7)
     
         
@@ -86,12 +90,12 @@ def tracer_moyenne(dico,data,champs):
     #ax1.plot([-56,-56],[60,41],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
     
     cb1 = plt.colorbar(mm, orientation='horizontal',shrink=0.5, pad=0.1)
-    cb1.set_label('CAPExCP proxy', size='x-large')
+    #cb1.set_label('CAPExCP proxy', size='x-large')
    
     #plt.savefig('./figure/capecp_'+str(year)+'.png', bbox_inches='tight', pad_inches=0.1)  
     plt.show()
 
-def tracer(dico,data,champs):
+def tracer_moyenne_echelle(dico,data,data_scale,champs,champs_scale):
     resolution= abs(data.lat.values[0]-data.lat.values[1])
     
     #cmap = mpl.cm.jet
@@ -128,9 +132,76 @@ def tracer(dico,data,champs):
         # Put a background image on for nice sea rendering.
     ax1.stock_img()
     
+    datamean=data[champs].mean(dim='time').values
+    #datamean = np.ma.masked_where(datamean <= 1.588127e-04, datamean)
+    levels = np.linspace(0, np.nanmean(data_scale[champs_scale].values), 11)
+    
+    datamean[datamean<0.00005]=np.nan
+    mm = ax1.contourf(data.lon.values,\
+      data.lat.values,\
+      datamean,\
+    #  vmin=0.,\
+    #  vmax=40., \
+      transform=ccrs.PlateCarree(),\
+      levels=levels,\
+      cmap="jet",\
+      extend='max',
+      alpha=0.7)
+    
+        
+    #ax1.plot([-90,-56],[60,60],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
+    #ax1.plot([-90,-56],[41,41],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
+    #ax1.plot([-90,-90],[60,41],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
+    #ax1.plot([-56,-56],[60,41],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
+    
+    cb1 = plt.colorbar(mm, orientation='horizontal',shrink=0.5, pad=0.1)
+    #cb1.set_label('CAPExCP proxy', size='x-large')
+   
+    #plt.savefig('./figure/capecp_'+str(year)+'.png', bbox_inches='tight', pad_inches=0.1)  
+    plt.show()
+
+
+def tracer(dico,data,champs):
+    resolution= abs(data.lat.values[0]-data.lat.values[1])
+    
+    #cmap = mpl.cm.jet
+    #norm = BoundaryNorm(clevs, cmap.N, extend='both')
+    
+    fig = plt.figure(figsize=(28,16), frameon=True)  
+    ############################
+    ##### main image
+    
+    ax1 = plt.axes( projection=ccrs.Mercator(central_longitude=-80))
+    #ax1 = plt.axes( projection=ccrs.LambertConformal(central_longitude=-80))
+    ax1.set_title(champs+ '  resolution ' + str(resolution) +'°' +dico['methode_spatiale'][0],loc='center')
+    #ax1 = fig.add_subplot( projection=ccrs.LambertConformal())
+    ax1.set_extent(bounds(dico), crs=ccrs.PlateCarree()) 
+    ax1.coastlines(resolution='auto', color='k')
+    ax1.gridlines(color='lightgrey', linestyle='-', draw_labels=True)
+    ax1.add_feature(cfeature.OCEAN.with_scale('50m'))      # couche ocean
+    ax1.add_feature(cfeature.LAND.with_scale('50m'))       # couche land
+    ax1.add_feature(cfeature.LAKES.with_scale('50m'))      # couche lac
+    
+    #ax.add_feature(cfeature.BORDERS.with_scale('50m'), linestyle='dotted')    # couche frontieres
+    #ax.add_feature(cfeature.RIVERS.with_scale('50m'))     # couche rivières 
+    #coast = cfeature.NaturalEarthFeature(category='physical', scale='10m',     # ajout de la couche cotière 
+    #                            facecolor='none', name='coastline')
+    #ax.add_feature(coast, edgecolor='black')   
+    states_provinces = cfeature.NaturalEarthFeature(
+    category='cultural',
+    name='admin_1_states_provinces_lines',
+    scale='50m',
+    facecolor='none')
+    ax1.add_feature(cfeature.LAND)
+    ax1.add_feature(cfeature.COASTLINE)
+    ax1.add_feature(states_provinces, edgecolor='gray')
+    ax1.add_feature(cfeature.BORDERS)
+        # Put a background image on for nice sea rendering.
+    ax1.stock_img()
+    
     #datamean=np.nanmean(data[champs])
     #datamean = np.ma.masked_where(datamean <= 1.588127e-04, datamean)
-    levels = np.linspace(0, np.nanmean(data[champs].values)*10, 11)
+    levels = np.linspace(data.min()[champs].values, np.nanmean(data[champs].values), 11)
     
     mm = ax1.contourf(data.lon.values,\
       data.lat.values,\
@@ -150,9 +221,9 @@ def tracer(dico,data,champs):
     #ax1.plot([-56,-56],[60,41],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
     
     cb1 = plt.colorbar(mm, orientation='horizontal',shrink=0.5, pad=0.1)
-    cb1.set_label('CAPExCP proxy', size='x-large')
    
-    #plt.savefig('./figure/capecp_'+str(year)+'.png', bbox_inches='tight', pad_inches=0.1)  
+   
+    plt.savefig('carte-1')  
     plt.show()
 
 def tracer_saison(dico,data,champs):
@@ -181,7 +252,7 @@ def tracer_saison(dico,data,champs):
         
      mm = ax.pcolormesh(data.lon.values,\
                        data.lat.values,\
-                       np.mean(data[champs].values,axis=0),\
+                       data[champs].mean(dim='time').values,\
                        vmin=0,\
                        vmax=np.nanmean(data[champs].values)*10, \
                        transform=ccrs.PlateCarree(),\
@@ -264,7 +335,7 @@ def trace_occurences_mensuelles(dataset_obs,liste_dataset_model,champs_obs,champ
     plt.show()
 '''
 
-def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,liste_dataset_model,champs_obs,champs_model,dates,lon,lat,method):
+def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,liste_dataset_model,champs_obs,champs_model,dates,lon,lat,method,domain):
     occurences_model =[]
     color=['--vb','--vy','--vg','--vr']
     count=0
@@ -289,7 +360,8 @@ def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,
                 
                 if count < len(champs_model):    
                     
-                    correlation = np.corrcoef(F,occurences_model[count],F)[0,1]
+                    correlation = np.corrcoef(F,occurences_model[count])[0,1]
+                    
                     axs[i, j].plot(x,occurences_model[count],color[count],label=champs_model[count])
                     axs[i, j].set_title('correlation : '+str(correlation)[:5],size=8)
                     ax2=axs[i, j].twinx() 
@@ -342,7 +414,7 @@ def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,
     
     mm = ax1.contourf(dataset_obs_canada.lon.values,\
       dataset_obs_canada.lat.values,\
-      np.nanmean(dataset_obs_canada[champs_obs[0]].values,axis=0),\
+      dataset_obs_canada[champs_obs[0]].mean(dim='time').values,\
     #  vmin=0.,\
     #  vmax=40., \
       transform=ccrs.PlateCarree(),\
@@ -371,9 +443,41 @@ def trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs,
     
         
     
-    plt.suptitle('occurence mensuelle_' +method)
+    plt.suptitle('occurence mensuelle_' +method+'_'+domain)
     fig.legend(loc="lower right")
     plt.savefig('Canada')
     plt.show()
 
+
+
+def trace_occurences_mensuelles_ecozones(dico_Canada,dico,dataset_obs_canada,dataset_obs_ecozones,liste_dataset_model_ecozones,
+                                         champs_obs,champs_model,dates,lon,lat,method):
+    cape_ecozones=liste_dataset_model_ecozones[0]
+    cp_ecozones=liste_dataset_model_ecozones[1]
+    proxy_ecozones=liste_dataset_model_ecozones[2]
+    for i in range(0,18):
+        
+        trace_occurences_mensuelles(dico_Canada,dico,dataset_obs_canada,dataset_obs_ecozones[i]
+                                          [cape_ecozones[i],cp_ecozones[i],proxy_ecozones[i]],
+                                          champs_obs,champs_model,dates,lon,lat,method,ecozones[i])
+
+
+def trace_carte_correlation_mensuelle(dico,liste_mask_ecozones,dataset_obs_ecozones,dataset_model_ecozones,champs_obs,champs_model,dates,lon,lat,method='all'):
+    correlation_ecozone=[]
+    for i in range(0,18):
+        correlation_ecozone.append(np.corrcoef(statistiques.nombre_occurence_mensuelle(dataset_obs_ecozones[i], champs_obs, 
+                                                                                       dates, lon, lat),
+                                   statistiques.moyenne_occurence_mensuelle(dataset_model_ecozones[i], champs_model, 
+                                                                            dates, lon, lat))[0,1])
+    A=liste_mask_ecozones[0] * correlation_ecozone[0]
+    indices = [k for k in range(1,18)]
+    if method != 'all':
+        del indices[method]
+    for i in indices:
+        A= A+  liste_mask_ecozones[i]  * correlation_ecozone[i]
+        
+    tracer(dico,A.where(A != 0),'ecozone')
+
+   
+    
     
