@@ -71,7 +71,7 @@ def tracer_moyenne(dico,data,champs):
     datamean=data[champs].mean(dim='time').values
     #datamean = np.ma.masked_where(datamean <= 1.588127e-04, datamean)
     levels = np.linspace(0, np.nanmean(data[champs].values)*50, 11)
-    datamean[datamean<0.00005]=np.nan
+    datamean[abs(datamean)<0.00005]=np.nan
     mm = ax1.contourf(data.lon.values,\
       data.lat.values,\
       datamean,\

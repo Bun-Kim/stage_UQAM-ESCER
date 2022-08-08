@@ -13,6 +13,7 @@ import pandas as pd
 from netCDF4 import Dataset
 import subprocess
 import numpy as np
+import matplotlib.pyplot as plt
 
 dir_obs='../data/observation/'
 dir_model='../data/model/'
@@ -127,7 +128,7 @@ def sauvegarde_donnees(data,lat,lon,t,champs):
     data[champs].values = ncin.variables[champs][:]
     ncin.close()
         
-def liste_mask_ecozones(dico,data):
+def fct_liste_mask_ecozones(dico,data):
     mask_ecozones=[]
     for i in range(0,18):
         data = data.sel(lat=slice(dico['latS'],dico['latN'])).sel(lon=slice(dico['lonW'],dico['lonE']))
@@ -150,4 +151,12 @@ def champs_ecozone(data,dataset_ecozones,champs):
         #L.append((dataset_ecozones[k] * data[champs]).to_array().T.to_dataset(name='cape'))
         L.append((dataset_ecozones[k] * data[champs]).rename({'ecozone':champs}))
     return L
+
+def anomalies(dataset,n):
+    datasets_ano=[]
+    for k in range(1,n+1):
+        datasets_ano.append(dataset.groupby('time')-dataset.rolling(time=k,center=True).mean())
+        print(k)
+    return datasets_ano
+
 
