@@ -10,6 +10,7 @@ import numpy as np
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
+import calendar
 
 ecozones=['Boreal_Cordillera','Taiga_Shield_W','Boreal_Shield_W','Northern_Arctic','Taiga_Cordillera','Taiga_Plains',
           'Southern_Arctic','Boreal_Plains','Montane_Cordillera','Prairies','Pacific_Maritime','Arctic_Cordillera',
@@ -79,7 +80,7 @@ def data_journaliere(dataset,champs,mois,dates,lon,lat):
     
 
     for i in range(1,366):
-            liste_mois.append(np.any([dates.day==i],axis=0))
+            liste_jours.append(np.any([dates.day==i],axis=0))
     if np.shape(dataset[champs].values) != (730, 30, 100) :
         temp = np.reshape(dataset[champs].values,(730, 30, 100))
         data_mensuel=[temp[liste_jours[i]] for i in range(365)]
@@ -158,6 +159,9 @@ def correlation_glissante_point(dataset_obs,champs_obs,dataset_model,champs_mode
     plt.title('correlation sur une fenetre glissante de ' +str(window) + ' jours')
 
 
+    
+    plt.title('correlation sur une fenetre glissante de ' +str(window) + ' jours')
+
 def correlation_glissante_membres(dataset_obs,champs_obs,dataset_model,champs_model,dates,lon,lat,window):
     membres=[]
     for latitude in lat:
@@ -193,12 +197,103 @@ def trace_membre(membres,ecozone_name):
     plt.title('correlations de Pearson proxy/F sur les points de grille de l ecozone ' + ecozone_name)
     plt.grid()
     plt.show()
+
+def trace_membre_avec_F(membres,F,ecozone_name):
+    plt.plot(np.nanmean(membres,axis=0),'r',label='moyenne',alpha=0.6)
+    plt.plot(np.nanpercentile(membres,25,axis=0),'k--',linewidth=0.5,label='1er quartile')
+    plt.plot(np.nanpercentile(membres,75,axis=0),'k--',linewidth=0.5,label='3e quartile')
     
+    plt.plot(F.sum(dim='lat',skipna=True).sum(dim='lon',skipna=True).F.values/np.nanmax(F.sum(dim='lat',skipna=True).sum(dim='lon',skipna=True).F.values),'g-',label='F',
+             alpha=0.3)
+
+    
+    plt.xlabel('jours')
+    plt.ylabel('correlation de Pearson')
+    plt.fill_between(np.linspace(0,len(membres[0])-1,len(membres[0])),np.nanpercentile(membres,25,axis=0), np.nanpercentile(membres,75,axis=0), color='#539ecd',alpha=0.7)
+    plt.legend()
+    plt.title('correlations de Pearson proxy/F sur les points de grille de l ecozone ' + ecozone_name)
+    plt.grid()
+    plt.show()
+    
+ 
 def correlations_glissante_membres_ecozones(dataset_obs_ecozones,champs_obs,dataset_model_ecozones,champs_model,dates,lon,lat,window):
     n = len(dataset_model_ecozones)
     for k in range(n):
         membres_ecozone_k = correlation_glissante_membres(dataset_obs_ecozones[k], champs_obs, dataset_model_ecozones[k]
                                                                        , champs_model, dates, lon, lat, window)
-        trace_membre(membres_ecozone_k, ecozones[k] )
+        trace_membre_avec_F(membres_ecozone_k,dataset_obs_ecozones[k], ecozones[k] )
 
+def trace_membre_comparaison(liste_membres,liste_fenetre,ecozone_name):
+    for k in range(len(liste_membres)):
+        plt.plot(np.nanmean(liste_membres[k],axis=0),label='moyenne ' +str(liste_fenetre[k]) + ' jours' ,alpha=0.6)
+       
+    
+        plt.xlabel('jours')
+        plt.ylabel('correlation de Pearson')
         
+    plt.legend()
+    plt.title('correlations de Pearson proxy/F sur les points de grille de l ecozone ' + ecozone_name)
+    plt.grid()
+    plt.show()
+    
+def correlation_glissante_membres_upgrade(dataset_obs,champs_obs,dataset_model,champs_model,dates,longitude,latitude,window):
+    rolling_obs = dataset_obs.sel(lat=latitude).sel(lon=longitude).rolling(time=window,center=True)
+    with_dim_obs = rolling_obs.construct('window_dim')      
+    
+    rolling_model = dataset_model.sel(lat=latitude).sel(lon=longitude).rolling(time=window,center=True)
+    with_dim_model = rolling_model.construct('window_dim') 
+    
+    delta = datetime.timedelta(days = window)
+    startday2 = dates[0] + delta
+    endday2 = dates[-1]-delta
+    dates3 = pd.date_range(startday2, endday2, freq='D')
+    jours=np.any([dates3.day!=29,dates3.month!=2],axis=0)
+    dates3=dates3[jours]
+    
+    with_dim_obs=  with_dim_obs.sel(time=slice(startday2,endday2))
+    with_dim_model=  with_dim_model.sel(time=slice(startday2,endday2))
+    
+    correlations=[]
+    compteur = 0
+    for k in range(len(correlations)):
+        if np.isnan(correlations[k])== True:
+            compteur = compteur +1
+            
+    
+    
+    for k in range(len(with_dim_obs[champs_obs].values)):
+        correlations.append(np.corrcoef(with_dim_obs[champs_obs].values[k],with_dim_model[champs_model].values[k])[0,1])
+    #plt.plot(correlations)
+    return correlations
+   
+    
+    plt.title('correlation sur une fenetre glissante de ' +str(window) + ' jours')
+
+
+    
+    plt.title('correlation sur une fenetre glissante de ' +str(window) + ' jours')
+
+
+
+
+def correlation_mensuelle_par_point(dataset_obs,champs_obs,dataset_model,champs_model,annee,mois):
+    month_idxs_obs=dataset_obs.groupby('time.month').groups
+    month_idxs_obs=dataset_model.groupby('time.month').groups
+    # Extract the time indices corresponding to all the month
+    m_idxs=month_idxs_obs[dico_mois[mois] + 1]
+
+    # Extract the  months by selecting 
+    # the relevant indices
+    month_obs=dataset_obs.isel(time=m_idxs)
+    month_model=dataset_model.isel(time=m_idxs)
+
+
+    year_idxs_obs=month_obs.groupby('time.year').groups
+    
+    
+    y_idxs=year_idxs_obs[annee]
+    
+    year_obs=month_obs.isel(time=y_idxs)
+    year_model=month_model.isel(time=y_idxs)
+
+    return xr.corr(year_obs[champs_obs],year_model[champs_model],dim='time')

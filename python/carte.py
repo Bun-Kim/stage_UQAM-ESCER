@@ -161,7 +161,7 @@ def tracer_moyenne_echelle(dico,data,data_scale,champs,champs_scale):
     plt.show()
 
 
-def tracer(dico,data,champs):
+def tracer(dico,data,champs,name):
     resolution= abs(data.lat.values[0]-data.lat.values[1])
     
     #cmap = mpl.cm.jet
@@ -173,7 +173,7 @@ def tracer(dico,data,champs):
     
     ax1 = plt.axes( projection=ccrs.Mercator(central_longitude=-80))
     #ax1 = plt.axes( projection=ccrs.LambertConformal(central_longitude=-80))
-    ax1.set_title(champs+ '  resolution ' + str(resolution) +'°' +dico['methode_spatiale'][0],loc='center')
+    ax1.set_title(champs+ '  resolution ' +name + str(resolution) +'°' +dico['methode_spatiale'][0],loc='center')
     #ax1 = fig.add_subplot( projection=ccrs.LambertConformal())
     ax1.set_extent(bounds(dico), crs=ccrs.PlateCarree()) 
     ax1.coastlines(resolution='auto', color='k')
@@ -212,7 +212,7 @@ def tracer(dico,data,champs):
       levels=levels,\
       cmap="jet",\
       extend='both',
-      alpha=0.7)
+      alpha=0.6)
     
         
     #ax1.plot([-90,-56],[60,60],color='red',linewidth=3, linestyle='-', transform=ccrs.PlateCarree())
@@ -223,7 +223,7 @@ def tracer(dico,data,champs):
     cb1 = plt.colorbar(mm, orientation='horizontal',shrink=0.5, pad=0.1)
    
    
-    plt.savefig('carte-1')  
+    #plt.savefig('carte-1')  
     plt.show()
 
 def tracer_saison(dico,data,champs):
@@ -476,7 +476,7 @@ def trace_carte_correlation_mensuelle(dico,liste_mask_ecozones,dataset_obs_ecozo
     for i in indices:
         A= A+  liste_mask_ecozones[i]  * correlation_ecozone[i]
         
-    tracer(dico,A.where(A != 0),'ecozone')
+    tracer(dico,A.where(A != 0),'ecozone','')
 
    
     

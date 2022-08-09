@@ -21,7 +21,7 @@ base_Canada = {'anneeDebut':2018, 'anneeFin':2019,'anneeDebut_model':2018,
         'latS':40.5,
         'latN':69.5,'lonW':-149.5,'lonE':-50.5,'method_obs':'max',
         'methode_temporelle_proxy':['max','sum'],
-        'methode_spatiale_proxy':['mean','mean'],'methode_proxy':'mul','methode_spatiale':['conservatif','conservatif']}
+        'methode_spatiale_proxy':['max','sum'],'methode_proxy':'mul','methode_spatiale':['conservatif','conservatif']}
 
 ecozones=['Boreal_Cordillera','Taiga_Shield_W','Boreal_Shield_W','Northern_Arctic','Taiga_Cordillera','Taiga_Plains',
           'Southern_Arctic','Boreal_Plains','Montane_Cordillera','Prairies','Pacific_Maritime','Arctic_Cordillera',
@@ -330,7 +330,7 @@ cape_prairies =cape_ecozones[9]
 cp_prairies= cp_ecozones[9]
 proxy_prairies = proxy_ecozones[9]
 
-plt.plot(F_prairies.sum(dim='lat',skipna=True).sum(dim='lon',skipna=True).F.values[:365]/10,'k-',alpha=0.6)
+plt.plot(F_prairies.sum(dim='lat',skipna=True).sum(dim='lon',skipna=True).F.values[:365]/20000,'k-',alpha=0.3)
 
 
 for longitude in proxy_prairies.lon.values:
@@ -348,15 +348,49 @@ statistiques.trace_membre(membres_prairies_proxy, 'prairies')
 '''
 membres_prairies_cape = statistiques.correlation_glissante_membres(F_prairies, 'F', cape_prairies, 'cape', date2_model, lo_model, la_model, 30)
 statistiques.trace_membre(membres_prairies_cape, 'prairies')
-'''
 
 membres_prairies_cp = statistiques.correlation_glissante_membres(F_prairies, 'F', cp_prairies, 'cp', date2_model, lo_model, la_model, 30)
 statistiques.trace_membre(membres_prairies_cp, 'prairies')
-
+'''
 
 # =============================================================================
 # correlations avec des membres pour chaque zone (tres long)
 # =============================================================================
 statistiques.correlations_glissante_membres_ecozones(F_ecozones, 'F', proxy_ecozones, 'proxy', date2_model, lo_model, la_model, 30)
 
+# =============================================================================
+# comparaison fenetre
+# =============================================================================
+comparaison = []
+comparaison.append(statistiques.correlation_glissante_membres(F_prairies, 'F', cp_prairies, 'cp', date2_model, lo_model, la_model, 10))
+comparaison.append(statistiques.correlation_glissante_membres(F_prairies, 'F', cp_prairies, 'cp', date2_model, lo_model, la_model, 15))
+comparaison.append(statistiques.correlation_glissante_membres(F_prairies, 'F', cp_prairies, 'cp', date2_model, lo_model, la_model, 30))
 
+statistiques.trace_membre_comparaison(comparaison ,[10,15,30],'prairies')
+
+# =============================================================================
+# comparaison correlation/ occurrence eclairs
+# =============================================================================
+statistiques.trace_membre_avec_F(membres_prairies_proxy, F_prairies, 'prairies')
+
+# =============================================================================
+# correlation de Pearson sur 2 ans sur chaque ecozone
+# =============================================================================
+xr.DataArray.to_dataset(xr.corr(proxy.proxy, F.F, dim="time"),name='correlation')
+correlations_ecozones = data_processing.champs_ecozone(xr.DataArray.to_dataset(xr.corr(proxy.proxy, F.F, dim="time"),name='correlation')
+                                                       , liste_mask_ecozones,'correlation')
+
+# =============================================================================
+# carte de correlation mensuelles par point
+# =============================================================================
+
+for an in np.arange(2018,2020):
+    for mois in liste_mois:
+        corr = xr.DataArray.to_dataset(statistiques.correlation_mensuelle_par_point(da_obs, 'F', proxy, 'proxy', an, mois), name='correlation')
+        carte.tracer(base_Canada, corr,'correlation',mois + ' ' + str(an) + ' ')
+    
+    
+    
+    
+    
+    
